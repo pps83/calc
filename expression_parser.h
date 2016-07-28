@@ -4,12 +4,30 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <list>
 
 
 //  EXPR          ::= PROD+EXPR | PROD-EXPR | PROD             PROD([+\-]PROD)*
 //  PROD          ::= TERM*PROD | TERM/PROD | TERM             TERM([*\/]TERM)*
 //  TERM          ::= -TERM | TERM FUNC | FUNC | NUM           -*(NUM|FUNC)(FUNC)*
 //  FUNC          ::= log(EXPR) | (EXPR)                       (log)?\(EXPR\)
+
+namespace
+{
+    typedef std::list<struct t_term> t_prod;
+    typedef std::list<t_prod> t_expr;
+    struct t_func
+    {
+        bool log;
+        t_expr expr;
+    };
+    struct t_term
+    {
+        bool div, has_func;
+        double num_value;
+        t_func func_value;
+    };
+}
 
 class expression_parser
 {
