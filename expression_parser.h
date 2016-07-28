@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 #include <list>
 
 
@@ -27,6 +28,38 @@ namespace
         double num_value;
         t_func func_value;
     };
+    double eval(const t_expr &expr);
+    double eval(const t_func &func)
+    {
+        double ret = eval(func.expr);
+        return func.log ? log10(ret) : ret;
+    }
+    double eval(const t_term &term)
+    {
+        double ret = term.num_value;
+        if (term.has_func)
+            ret *= eval(term.func_value);
+        return ret;
+    }
+    double eval(const t_prod &terms)
+    {
+        double ret = 1;
+        for (const auto &term : terms)
+        {
+            if (term.div)
+                ret /= eval(term);
+            else
+                ret *= eval(term);
+        }
+        return ret;
+    }
+    double eval(const t_expr &expr)
+    {
+        double ret = 0;
+        for (const auto &prod : expr)
+            ret += eval(prod);
+        return ret;
+    }
 }
 
 class expression_parser
