@@ -1,7 +1,9 @@
-﻿/out
+﻿# ignore VS-specific files:
+/out
 /.vs
 /*.VC.db
 /*.VC.opendb
+# ignore gmake output
 /*.exe
 /*.o
 /main
