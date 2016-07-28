@@ -6,8 +6,8 @@
 #include <assert.h>
 
 
-//  EXPR          ::= PROD+EXPR | PROD-EXPR | PROD             PROD([+\-]EXPR)*
-//  PROD          ::= TERM*PROD | TERM/PROD | TERM             TERM([*\/]PROD)?
+//  EXPR          ::= PROD+EXPR | PROD-EXPR | PROD             PROD([+\-]PROD)*
+//  PROD          ::= TERM*PROD | TERM/PROD | TERM             TERM([*\/]TERM)*
 //  TERM          ::= -TERM | TERM FUNC | FUNC | NUM           -*(NUM|FUNC)(FUNC)*
 //  FUNC          ::= log(EXPR) | (EXPR)                       (log)?\(EXPR\)
 
@@ -31,16 +31,24 @@ protected:
     void expr()
     {
         prod();
-        skip_ws();
-        if (next('+') || next('-'))
-            expr();
+        for (;;)
+        {
+            skip_ws();
+            if (!next('+') && !next('-'))
+                break;
+            prod();
+        }
     }
     void prod()
     {
         term();
-        skip_ws();
-        if (next('/') || next('*'))
-            prod();
+        for (;;)
+        {
+            skip_ws();
+            if (!next('/') && !next('*'))
+                break;
+            term();
+        }
     }
     void term()
     {

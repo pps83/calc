@@ -7,7 +7,7 @@ grammar rules:
   FUNC          ::= log(EXPR) | (EXPR)
 
 or in pseudo-regex:
-  EXPR      ::=  PROD([+\-]EXPR)*
-  PROD      ::=  TERM([*\/]PROD)?
+  EXPR      ::=  PROD([+\-]PROD)*
+  PROD      ::=  TERM([*\/]TERM)*
   TERM      ::=  -*(NUM|FUNC)(FUNC)*
   FUNC      ::=  (log)?\(EXPR\)
