@@ -1,0 +1,13 @@
+class expression_parser implements recursive descent parser with the following
+grammar rules:
+
+  EXPR          ::= PROD+EXPR | PROD-EXPR | PROD
+  PROD          ::= TERM*PROD | TERM/PROD | TERM
+  TERM          ::= -TERM | TERM FUNC | FUNC | NUM
+  FUNC          ::= log(EXPR) | (EXPR)
+
+or in pseudo-regex:
+  EXPR      ::=  PROD([+\-]EXPR)*
+  PROD      ::=  TERM([*\/]PROD)?
+  TERM      ::=  -*(NUM|FUNC)(FUNC)*
+  FUNC      ::=  (log)?\(EXPR\)

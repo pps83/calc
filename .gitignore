@@ -1,0 +1,7 @@
+﻿/out
+/.vs
+/*.VC.db
+/*.VC.opendb
+/*.exe
+/*.o
+/main
