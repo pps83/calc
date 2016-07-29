@@ -11,3 +11,5 @@ or in pseudo-regex:
   PROD      ::=  TERM([*\/]TERM)*
   TERM      ::=  -*(NUM|FUNC)(FUNC)*
   FUNC      ::=  (log)?\(EXPR\)
+
+For licensing this code see LICENSE
