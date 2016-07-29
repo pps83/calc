@@ -24,7 +24,7 @@ namespace
     };
     struct t_term
     {
-        bool div, has_func;
+        bool div;
         double num_value;
         t_func func_value;
     };
@@ -37,7 +37,7 @@ namespace
     double eval(const t_term &term)
     {
         double ret = term.num_value;
-        if (term.has_func)
+        if (!term.func_value.expr.empty())
             ret *= eval(term.func_value);
         return ret;
     }
@@ -73,6 +73,7 @@ public:
     bool parse(const char *expression)
     {
         p = expression;
+        parsed_expression.clear();
         expr();
         skip_ws();
         return *p == '\0';
@@ -85,60 +86,91 @@ protected:
         for (;;)
         {
             skip_ws();
-            if (!next('+') && !next('-'))
+            if (!next('+') && *p!='-') // treat (a-b) as (a+-b)
                 break;
             prod();
         }
     }
     void prod()
     {
-        term();
+        parsed_expression.resize(parsed_expression.size()+1);
+        term(true);
+        func_terms();
         for (;;)
         {
             skip_ws();
             if (!next('/') && !next('*'))
                 break;
-            term();
+            term(true, p[-1]=='/');
+            func_terms();
         }
     }
-    void term()
+    void func_terms()
     {
-        skip_ws();
-        bool neg = false;
-        while (next('-'))
+        for (;;)
         {
-            skip_ws();
-            neg = !neg;
+            const char *tmp = p;
+            if (!term(false))
+            {
+                p = tmp;
+                break;
+            }
         }
-        char c = *p;
-        // last comma for locales that use comma as decimal mark
-        if (c >= '0' && c <= '9' || c == '.' || c == ',')
-            num();
-        while (func());
     }
-    bool func()
+    bool term(bool num_allowed, bool div = false)
     {
+        parsed_expression.back().resize(parsed_expression.back().size()+1);
+        t_term &t = parsed_expression.back().back();
+        t.num_value = 1;
+        t.div = div;
         skip_ws();
-        bool is_log = next("log");
-        if (is_log)
-            skip_ws();
-        if (!next('('))
+        bool has_value = false;
+        if (num_allowed)
         {
-            if (!is_log)
-                return false;
-            throw "expr paren start";
+            bool neg = false;
+            while (next('-'))
+            {
+                skip_ws();
+                neg = !neg;
+            }
+            // last comma for locales that use comma as decimal mark
+            if (*p >= '0' && *p <= '9' || *p == '.' || *p == ',')
+            {
+                has_value = true;
+                num(t.num_value);
+            }
+            if (neg)
+                t.num_value *= -1;
         }
-        expression_parser parser(p);
-        p = parser.p;
-        skip_ws();
-        if (!next(')'))
-            throw "expr paren end";
+        if(!has_value)
+        {
+            t.func_value.log = next("log");
+            if (t.func_value.log)
+                skip_ws();
+            if (!next('('))
+            {
+                if (!t.func_value.log)
+                {
+                    if (num_allowed)
+                        throw "expected a value";
+                    parsed_expression.back().resize(parsed_expression.back().size()-1);
+                    return false;
+                }
+                throw "expr paren start";
+            }
+            expression_parser parser;
+            parser.parse(p);
+            p = parser.p;
+            t.func_value.expr.swap(parser.parsed_expression);
+            skip_ws();
+            if (!next(')'))
+                throw "expr paren end";
+        }
         return true;
     }
-    void num()
+    void num(double &f)
     {
         int n;
-        double f;
         if (sscanf(p, "%lf%n", &f, &n) < 1)
             throw "cannot parse number";
         p += n;
@@ -166,6 +198,7 @@ protected:
 
 private:
     const char *p;
+    t_expr parsed_expression;
 };
 
 
