@@ -78,6 +78,10 @@ public:
         skip_ws();
         return *p == '\0';
     }
+    operator const t_expr&() const
+    {
+        return parsed_expression;
+    }
 
 protected:
     void expr()
