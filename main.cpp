@@ -1,19 +1,22 @@
 #include <assert.h>
 #include "expression_parser.h"
 
-#define TEST(expr, expected_res)                             \
-do {                                                         \
-    expression_parser parser;                                \
-    bool parse_result = parser.parse(expr);                  \
-    assert(parse_result);                                    \
-    double res = eval(parser);                               \
-    char str[256];                                           \
-    sprintf(str, "%f %f", res, (double)expected_res);        \
-    double d1, d2;                                           \
-    sscanf(str, "%lf %lf", &d1, &d2);                        \
-    printf("%s\n", d1==d2 ? "OK" : "ERROR");                 \
-} while(0)                                                   \
-
+static int ok_count = 0, err_count = 0;
+void TEST(const char *expr, double expected_res)
+{
+    expression_parser parser;
+    bool parse_result = parser.parse(expr);
+    assert(parse_result);
+    double res = eval(parser);
+    char str[256];
+    sprintf(str, "%f %f", res, expected_res);
+    double d1, d2;
+    sscanf(str, "%lf %lf", &d1, &d2);
+    if (d1==d2)
+        ok_count++;
+    else
+        err_count++;
+}
 
 int main()
 {
@@ -28,4 +31,9 @@ int main()
     TEST("(0.1/3+.1/3+10/300+3.14159265359)/1e8+10", 10.000000032);
     TEST("log((((((0.1/3+.1/3+10/300+3.14159265359)/1e8+10)))))", 1.00000000141);
     TEST("-5log((((((0.1/3+.1/3+10/300+3.14159265359)/1e8+10)))))(0+.1)", -0.5000000007);
+    if (err_count)
+        printf("%d tests passed, %d tests failed\n", ok_count, err_count);
+    else
+        printf("OK (%d tests passed)\n", ok_count);
+    return err_count;
 }
