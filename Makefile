@@ -1,21 +1,12 @@
-CXX=g++
-RM=rm -f
-CPPFLAGS=-g -std=c++11
-LDFLAGS=-g
-LDLIBS=-lm
-
-SRCS=main.cpp
-OBJS=$(subst .cpp,.o,$(SRCS))
-
-all: main
-
+CC=g++
+OBJS := $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 main: $(OBJS)
-	$(CXX) $(LDFLAGS) -o main $(OBJS) $(LDLIBS) 
 
-main.o: main.cpp expression_parser.h
+clean:
+	$(RM) $(OBJS) $(subst .o,.d,$(OBJS)) main
 
 test: main
 	./main
 
-clean:
-	$(RM) $(OBJS) main
+override CPPFLAGS += -MMD -std=c++11 -Wall
+-include $(subst .o,.d,$(OBJS))

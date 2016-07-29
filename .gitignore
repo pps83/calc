@@ -6,4 +6,5 @@
 # ignore gmake output
 /*.exe
 /*.o
+/*.d
 /main
