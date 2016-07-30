@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <math.h>
 #include <list>
+#include <stdexcept>
 
 
 //  EXPR          ::= PROD+EXPR | PROD-EXPR | PROD             PROD([+\-]PROD)*
@@ -13,70 +14,78 @@
 //  TERM          ::= -TERM | TERM FUNC | FUNC | NUM           -*(NUM|FUNC)(FUNC)*
 //  FUNC          ::= log(EXPR) | (EXPR)                       (log)?\(EXPR\)
 
-namespace
+typedef std::list<struct t_term> t_prod;
+typedef std::list<t_prod> t_expr;
+struct t_func
 {
-    typedef std::list<struct t_term> t_prod;
-    typedef std::list<t_prod> t_expr;
-    struct t_func
-    {
-        bool log;
-        t_expr expr;
-    };
-    struct t_term
-    {
-        bool div;
-        double num_value;
-        t_func func_value;
-    };
-    double eval(const t_expr &expr);
-    double eval(const t_func &func)
-    {
-        double ret = eval(func.expr);
-        return func.log ? log10(ret) : ret;
-    }
-    double eval(const t_term &term)
-    {
-        double ret = term.num_value;
-        if (!term.func_value.expr.empty())
-            ret *= eval(term.func_value);
-        return ret;
-    }
-    double eval(const t_prod &terms)
-    {
-        double ret = 1;
-        for (const auto &term : terms)
-        {
-            if (term.div)
-                ret /= eval(term);
-            else
-                ret *= eval(term);
-        }
-        return ret;
-    }
-    double eval(const t_expr &expr)
-    {
-        double ret = 0;
-        for (const auto &prod : expr)
-            ret += eval(prod);
-        return ret;
-    }
+    bool log;
+    t_expr expr;
+};
+struct t_term
+{
+    bool div;
+    double num_value;
+    t_func func_value;
+};
+double eval(const t_expr &expr);
+double eval(const t_func &func)
+{
+    double ret = eval(func.expr);
+    return func.log ? log10(ret) : ret;
 }
+double eval(const t_term &term)
+{
+    double ret = term.num_value;
+    if (!term.func_value.expr.empty())
+        ret *= eval(term.func_value);
+    return ret;
+}
+double eval(const t_prod &terms)
+{
+    double ret = 1;
+    for (const auto &term : terms)
+    {
+        if (term.div)
+            ret /= eval(term);
+        else
+            ret *= eval(term);
+    }
+    return ret;
+}
+double eval(const t_expr &expr)
+{
+    double ret = 0;
+    for (const auto &prod : expr)
+        ret += eval(prod);
+    return ret;
+}
+double eval(const char *expr);
+
+
+class expression_error : public std::invalid_argument
+{
+public:
+    explicit expression_error(const char *msg, const char *p) : std::invalid_argument(msg), p(p) {}
+    const char *p;
+};
+
 
 class expression_parser
 {
 public:
-    expression_parser(const char *expr = nullptr) : p(nullptr)
+    expression_parser(const char *expr = nullptr, char expect = '\0') : p(nullptr)
     {
         if (expr)
-            parse(expr);
+            parse(expr, expect);
     }
-    bool parse(const char *expression)
+    void parse(const char *expression, char expect = '\0')
     {
         p = expression;
         parsed_expression.clear();
         expr();
         skip_ws();
-        return *p == '\0';
+        if (*p && *p != expect)
+            err("unexpected input");
     }
     operator const t_expr&() const
     {
@@ -99,26 +108,12 @@ protected:
     {
         parsed_expression.resize(parsed_expression.size()+1);
         term(true);
-        func_terms();
         for (;;)
         {
             skip_ws();
             if (!next('/') && !next('*'))
                 break;
             term(true, p[-1]=='/');
-            func_terms();
-        }
-    }
-    void func_terms()
-    {
-        for (;;)
-        {
-            const char *tmp = p;
-            if (!term(false))
-            {
-                p = tmp;
-                break;
-            }
         }
     }
     bool term(bool num_allowed, bool div = false)
@@ -138,7 +133,7 @@ protected:
                 neg = !neg;
             }
             // last comma for locales that use comma as decimal mark
-            if (*p >= '0' && *p <= '9' || *p == '.' || *p == ',')
+            if ((*p >= '0' && *p <= '9') || *p == '.' || *p == ',')
             {
                 has_value = true;
                 num(t.num_value);
@@ -156,19 +151,27 @@ protected:
                 if (!t.func_value.log)
                 {
                     if (num_allowed)
-                        throw "expected a value";
+                        err("expected a value");
                     parsed_expression.back().resize(parsed_expression.back().size()-1);
                     return false;
                 }
-                throw "expr paren start";
+                err("expected '('");
             }
-            expression_parser parser;
-            parser.parse(p);
+            expression_parser parser(p, ')');
             p = parser.p;
             t.func_value.expr.swap(parser.parsed_expression);
             skip_ws();
             if (!next(')'))
-                throw "expr paren end";
+                err("expected ')'");
+        }
+        while (num_allowed)
+        {
+            const char *tmp = p;
+            if (!term(false))
+            {
+                p = tmp;
+                break;
+            }
         }
         return true;
     }
@@ -176,7 +179,7 @@ protected:
     {
         int n;
         if (sscanf(p, "%lf%n", &f, &n) < 1)
-            throw "cannot parse number";
+            err("cannot parse number");
         p += n;
     }
     void skip_ws()
@@ -199,11 +202,29 @@ protected:
         p += len;
         return true;
     }
+    void err(const char *msg)
+    {
+        throw expression_error(msg, p);
+    }
 
 private:
     const char *p;
     t_expr parsed_expression;
 };
+
+
+double eval(const char *expr)
+{
+    try
+    {
+        return eval(expression_parser(expr));
+    }
+    catch (const expression_error &e)
+    {
+        fprintf(stderr, "expression error: %s (at pos=%d)\n", e.what(), (int)(e.p-expr));
+    }
+    return 0;
+}
 
 
 #endif /* expression_parser_h_ */
