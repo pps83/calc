@@ -2,25 +2,38 @@
 #include "expression_parser.h"
 
 static int ok_count = 0, err_count = 0;
-void TEST(const char *expr, double expected_res)
+void TEST(const char *expr, double expected_res, const char *err_msg = "", int err_pos = 0)
 {
-    expression_parser parser;
-    bool parse_result = parser.parse(expr);
-    assert(parse_result);
-    double res = eval(parser);
-    char str[256];
-    sprintf(str, "%.10f %.10f", res, expected_res);
-    double d1, d2;
-    sscanf(str, "%lf %lf", &d1, &d2);
-    if (d1==d2)
-        ok_count++;
-    else
-        err_count++;
+    try
+    {
+        double res = eval(expression_parser(expr));
+        char str[256];
+        sprintf(str, "%.10f %.10f", res, expected_res);
+        double d1, d2;
+        sscanf(str, "%lf %lf", &d1, &d2);
+        if (d1 == d2)
+            ok_count++;
+        else
+            err_count++;
+    }
+    catch (const expression_error &e)
+    {
+        if (0==strcmp(err_msg, e.what()) && err_pos == (int)(e.p - expr))
+            ok_count++;
+        else
+        {
+            err_count++;
+            fprintf(stderr, "expression error: %s (at pos=%d)\n", e.what(), (int)(e.p - expr));
+        }
+    }
 }
 
 int main()
 {
     TEST("1", 1);
+    TEST("1.", 1);
+    TEST("1.0", 1);
+    TEST("1.0000", 1);
     TEST("0.123", 0.123);
     TEST("-0.123", -0.123);
     TEST("-0.123(3+4)", -0.861);
@@ -32,6 +45,24 @@ int main()
     TEST("log((((((0.1/3+.1/3+1/30+3.14159265359)/1e8+10)))))", 1.00000000141);
     TEST("-5log(((((.2/3+1/3+3.1415926535)/1e8+10))))(0+.1)", -0.50000000076);
     TEST("-5log(((((.2/3+1/3+3.1415926535)/1e8+10))))(0+.1)+1", 0.49999999923);
+
+    TEST("", 0, "expected a value", 0);
+    TEST("abc", 0, "expected a value", 0);
+    TEST("()", 0, "expected a value", 1);
+    TEST("1/", 0, "expected a value", 2);
+    TEST("1//2", 0, "expected a value", 2);
+    TEST("1*-", 0, "expected a value", 3);
+    TEST("1/()", 0, "expected a value", 3);
+    TEST("2(1+", 0, "expected a value", 4);
+    TEST("0a", 0, "unexpected input", 1);
+    TEST("0..123", 0, "unexpected input", 2);
+    TEST("1 1", 0, "unexpected input", 2);
+    TEST("1*(1+3 1)", 0, "unexpected input", 7);
+    TEST("log 100", 0, "expected '('", 4);
+    TEST("1/(1", 0, "expected ')'", 4);
+    TEST("1/(((1", 0, "expected ')'", 6);
+    TEST("1*(1+3", 0, "expected ')'", 6);
+
     if (err_count)
         printf("%d tests passed, %d tests failed\n", ok_count, err_count);
     else
