@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <iostream>
+#include <string>
 #include "expression_parser.h"
 
 static int ok_count = 0, err_count = 0;
@@ -28,7 +30,7 @@ void TEST(const char *expr, double expected_res, const char *err_msg = "", int e
     }
 }
 
-int main()
+int test()
 {
     TEST("1", 1);
     TEST("1.", 1);
@@ -72,4 +74,73 @@ int main()
     else
         printf("OK (%d tests passed)\n", ok_count);
     return err_count;
+}
+
+bool read_expr(std::string &expr)
+{
+    do 
+    {
+        std::cout << ">>> ";
+        std::cout.flush();
+        if (!std::getline(std::cin, expr))
+            return false;
+    }
+    while (expr.empty());
+    while (expr[expr.size() - 1] == '\\')
+    {
+        std::string extra;
+        std::cout << "... ";
+        std::cout.flush();
+        if (!std::getline(std::cin, extra))
+            return false;
+        expr.resize(expr.size()-1);
+        expr.append(extra);
+    }
+    return true;
+}
+
+static std::string to_string(double d)
+{
+    char str[128];
+    sprintf(str, "%.12g", d);
+    return str;
+}
+
+void calc_help()
+{
+    std::cout << "TODO: add help";
+}
+
+static int calc_eval(const std::string &expr)
+{
+    if (expr == "q" || expr == "exit")
+        return 0;
+    else if (expr == "help" || expr == "--help" || expr == "?" || expr == "/?")
+        calc_help();
+    else if (expr == "test")
+        return test();
+    else try
+    {
+        std::cout << to_string(eval(expression_parser(expr.c_str())));
+    }
+    catch (const expression_error &e)
+    {
+        std::cout << "expression error: " << e.what() <<
+            " (at pos=" << (int)(e.p - expr.c_str()) << ")";
+    }
+    return 1;
+}
+
+void calc()
+{
+    for (std::string expr; read_expr(expr) && calc_eval(expr);)
+        std::cout << std::endl;
+}
+
+int main(int argc, const char **argv)
+{
+    if (argc>1)
+        return calc_eval(argv[1]);
+    calc();
+    return 0;
 }
