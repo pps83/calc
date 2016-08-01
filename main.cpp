@@ -39,7 +39,11 @@ int main()
     TEST("-0.123(3+4)", -0.861);
     TEST("-0.123/(3+log(100))", -0.0246);
     TEST("1.0/3", 0.33333333333);
-    TEST("-0.123/(3+log(100))log(10)(1+1*5/6(3*2))", -0.1476);
+    TEST("log 100", 2);
+    TEST("log(100)", 2);
+    TEST("log--100", 2);
+    TEST("5log--100", 10);
+    TEST("-0.123/(3+log 100)log(10)(1+1*5/6(3*2))", -0.1476);
     TEST("(0.1/3+.1/3+10/300)/0.001e10", 1e-8);
     TEST("(0.1/3+.1/3+10/300+3.14159265359)/1e8+10", 10.0000000324);
     TEST("log((((((0.1/3+.1/3+1/30+3.14159265359)/1e8+10)))))", 1.00000000141);
@@ -48,6 +52,7 @@ int main()
 
     TEST("", 0, "expected a value", 0);
     TEST("abc", 0, "expected a value", 0);
+    TEST("log100", 0, "expected a value", 0);
     TEST("()", 0, "expected a value", 1);
     TEST("1/", 0, "expected a value", 2);
     TEST("1//2", 0, "expected a value", 2);
@@ -58,7 +63,6 @@ int main()
     TEST("0..123", 0, "unexpected input", 2);
     TEST("1 1", 0, "unexpected input", 2);
     TEST("1*(1+3 1)", 0, "unexpected input", 7);
-    TEST("log 100", 0, "expected '('", 4);
     TEST("1/(1", 0, "expected ')'", 4);
     TEST("1/(((1", 0, "expected ')'", 6);
     TEST("1*(1+3", 0, "expected ')'", 6);

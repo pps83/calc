@@ -4,12 +4,12 @@ grammar rules:
   EXPR          ::= PROD+EXPR | PROD-EXPR | PROD
   PROD          ::= TERM*PROD | TERM/PROD | TERM
   TERM          ::= -TERM | TERM FUNC | FUNC | NUM
-  FUNC          ::= log(EXPR) | (EXPR)
+  FUNC          ::= log(EXPR) | log TERM
 
 or in pseudo-regex:
   EXPR      ::=  PROD([+\-]PROD)*
   PROD      ::=  TERM([*\/]TERM)*
   TERM      ::=  -*(NUM|FUNC)(FUNC)*
-  FUNC      ::=  (log)?\(EXPR\)
+  FUNC      ::=  \(EXPR\) | log TERM
 
 For licensing this code see LICENSE

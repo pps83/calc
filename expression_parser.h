@@ -12,33 +12,23 @@
 //  EXPR          ::= PROD+EXPR | PROD-EXPR | PROD             PROD([+\-]PROD)*
 //  PROD          ::= TERM*PROD | TERM/PROD | TERM             TERM([*\/]TERM)*
 //  TERM          ::= -TERM | TERM FUNC | FUNC | NUM           -*(NUM|FUNC)(FUNC)*
-//  FUNC          ::= log(EXPR) | (EXPR)                       (log)?\(EXPR\)
+//  FUNC          ::= log(EXPR) | log TERM                     \(EXPR\) | log TERM 
 
 typedef std::list<struct t_term> t_prod;
 typedef std::list<t_prod> t_expr;
-struct t_func
-{
-    bool log;
-    t_expr expr;
-};
 struct t_term
 {
-    bool div;
+    bool div, log;
     double num_value;
-    t_func func_value;
+    t_expr expr_value;
 };
 double eval(const t_expr &expr);
-double eval(const t_func &func)
-{
-    double ret = eval(func.expr);
-    return func.log ? log10(ret) : ret;
-}
 double eval(const t_term &term)
 {
     double ret = term.num_value;
-    if (!term.func_value.expr.empty())
-        ret *= eval(term.func_value);
-    return ret;
+    if (!term.expr_value.empty())
+        ret *= eval(term.expr_value);
+    return term.log ? log10(ret) : ret;
 }
 double eval(const t_prod &terms)
 {
@@ -116,12 +106,13 @@ protected:
             term(true, p[-1]=='/');
         }
     }
-    bool term(bool num_allowed, bool div = false)
+    bool term(bool num_allowed, bool div = false, bool log = false)
     {
         parsed_expression.back().resize(parsed_expression.back().size()+1);
         t_term &t = parsed_expression.back().back();
         t.num_value = 1;
         t.div = div;
+        t.log = log;  // TODO: if possible, verify that log argument isn't negative
         skip_ws();
         bool has_value = false;
         if (num_allowed)
@@ -143,23 +134,21 @@ protected:
         }
         if(!has_value)
         {
-            t.func_value.log = next("log");
-            if (t.func_value.log)
-                skip_ws();
+            if (next_term("log"))
+            {
+                term(true, false, true);
+                return true;
+            }
             if (!next('('))
             {
-                if (!t.func_value.log)
-                {
-                    if (num_allowed)
-                        err("expected a value");
-                    parsed_expression.back().resize(parsed_expression.back().size()-1);
-                    return false;
-                }
-                err("expected '('");
+                if (num_allowed)
+                    err("expected a value");
+                parsed_expression.back().resize(parsed_expression.back().size()-1);
+                return false;
             }
             expression_parser parser(p, ')');
             p = parser.p;
-            t.func_value.expr.swap(parser.parsed_expression);
+            t.expr_value.swap(parser.parsed_expression);
             skip_ws();
             if (!next(')'))
                 err("expected ')'");
@@ -194,10 +183,14 @@ protected:
         ++p;
         return true;
     }
-    bool next(const char *str)
+    bool next_term(const char *str)
     {
         size_t len = strlen(str);
         if (0 != memcmp(str, p, len))
+            return false;
+        // check that function or variable has to end after len chars:
+        if ((p[len] >= 'a' && p[len] <= 'z') || (p[len] >= 'A'&& p[len] <= 'Z') ||
+            (p[len] >= '0' && p[len] <= '1') || p[len] == '_')
             return false;
         p += len;
         return true;
