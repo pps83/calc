@@ -77,11 +77,15 @@ public:
             skip_ws();
         }
         if (*p && *p != expect)
-        {
             err("unexpected input");
-        }
         if (!lhs_parsed_expression.empty())
+        {
+            if (lhs_parsed_expression_x.empty() && parsed_expression_x.empty())
+                err("linear equation missing 'x'");
             simplify();
+        }
+        else if (expect == '\0' && !parsed_expression_x.empty())
+            err("linear equation missing right hand side");
     }
     operator const t_expr&() const
     {

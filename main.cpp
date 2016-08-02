@@ -66,7 +66,6 @@ int test()
     TEST("1*-", 0, "expected a value", 3);
     TEST("1/()", 0, "expected a value", 3);
     TEST("2(1+", 0, "expected a value", 4);
-    TEST("0a", 0, "unexpected input", 1);
     TEST("0..123", 0, "unexpected input", 2);
     TEST("1 1", 0, "unexpected input", 2);
     TEST("1*(1+3 1)", 0, "unexpected input", 7);
@@ -75,6 +74,8 @@ int test()
     TEST("1*(1+3", 0, "expected ')'", 6);
     TEST("1/0", 0, "division by 0", -1);
     TEST("log -1", 0, "log of negative or 0", -1);
+    TEST("1=1", 0, "linear equation missing 'x'", 3);
+    TEST("x", 0, "linear equation missing right hand side", 1);
 
     if (err_count)
         printf("%d tests passed, %d tests failed\n", ok_count, err_count);
