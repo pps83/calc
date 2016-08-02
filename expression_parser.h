@@ -12,15 +12,23 @@
 //  EXPR          ::= PROD+EXPR | PROD-EXPR | PROD             PROD([+\-]PROD)*
 //  PROD          ::= TERM*PROD | TERM/PROD | TERM             TERM([*\/]TERM)*
 //  TERM          ::= -TERM | TERM FUNC | FUNC | NUM           -*(NUM|FUNC)(FUNC)*
-//  FUNC          ::= log(EXPR) | log TERM                     \(EXPR\) | log TERM 
+//  FUNC          ::= log(EXPR) | log TERM | x                 \(EXPR\) | log TERM | x
 
 typedef std::list<struct t_term> t_prod;
 typedef std::list<t_prod> t_expr;
+typedef std::list<struct t_prod_x> t_expr_x;
+struct t_prod_x
+{
+    t_expr::iterator x;
+    std::list<t_prod::iterator> xx;
+};
 struct t_term
 {
     bool div, log;
+    char x;
     double num_value;
     t_expr expr_value;
+    t_expr_x expr_value_x;
 };
 double eval(const t_expr &expr);
 double eval(const t_term &term)
@@ -72,10 +80,25 @@ public:
     {
         p = expression;
         parsed_expression.clear();
+        parsed_expression_x.clear();
+        lhs_parsed_expression.clear();
+        lhs_parsed_expression_x.clear();
         expr();
         skip_ws();
+        if (expect == '\0' && *p == '=')
+        {
+            ++p;
+            lhs_parsed_expression.swap(parsed_expression);
+            lhs_parsed_expression_x.swap(parsed_expression_x);
+            expr();
+            skip_ws();
+        }
         if (*p && *p != expect)
+        {
             err("unexpected input");
+        }
+        if (!lhs_parsed_expression.empty())
+            simplify();
     }
     operator const t_expr&() const
     {
@@ -113,6 +136,7 @@ protected:
         t.num_value = 1;
         t.div = div;
         t.log = log;  // TODO: if possible, verify that log argument isn't negative
+        t.x = 0;
         skip_ws();
         bool has_value = false;
         if (num_allowed)
@@ -139,19 +163,33 @@ protected:
                 term(true, false, true);
                 return true;
             }
-            if (!next('('))
+            if (((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')) && check_term(p[1]))
             {
-                if (num_allowed)
-                    err("expected a value");
-                parsed_expression.back().resize(parsed_expression.back().size()-1);
-                return false;
+                if (parsed_expression_x.empty() || parsed_expression_x.back().x != --parsed_expression.end())
+                {
+                    parsed_expression_x.resize(parsed_expression_x.size()+1);
+                    parsed_expression_x.back().x = --parsed_expression.end();
+                }
+                parsed_expression_x.back().xx.push_back(--parsed_expression.back().end());
+                t.x = *p++;
             }
-            expression_parser parser(p, ')');
-            p = parser.p;
-            t.expr_value.swap(parser.parsed_expression);
-            skip_ws();
-            if (!next(')'))
-                err("expected ')'");
+            else
+            {
+                if (!next('('))
+                {
+                    if (num_allowed)
+                        err("expected a value");
+                    parsed_expression.back().resize(parsed_expression.back().size() - 1);
+                    return false;
+                }
+                expression_parser parser(p, ')');
+                p = parser.p;
+                t.expr_value.swap(parser.parsed_expression);
+                t.expr_value_x.swap(parser.parsed_expression_x);
+                skip_ws();
+                if (!next(')'))
+                    err("expected ')'");
+            }
         }
         while (num_allowed)
         {
@@ -189,20 +227,82 @@ protected:
         if (0 != memcmp(str, p, len))
             return false;
         // check that function or variable has to end after len chars:
-        if ((p[len] >= 'a' && p[len] <= 'z') || (p[len] >= 'A'&& p[len] <= 'Z') ||
-            (p[len] >= '0' && p[len] <= '1') || p[len] == '_')
+        if (!check_term(p[len]))
             return false;
         p += len;
         return true;
+    }
+    static bool check_term(char c)
+    {
+        return !((c >= 'a' && c <= 'z') || (c >= 'A'&& c <= 'Z')
+            || (c >= '0' && c <= '1') || c == '_');
     }
     void err(const char *msg)
     {
         throw expression_error(msg, p);
     }
+    void simplify()
+    {
+        // move terms containing x to lhs
+        for (auto &it : parsed_expression_x)
+        {
+            it.x->front().num_value *= -1;
+            lhs_parsed_expression.splice(lhs_parsed_expression.end(), parsed_expression, it.x);
+        }
+        lhs_parsed_expression_x.splice(lhs_parsed_expression_x.end(), parsed_expression_x);
+        // move terms that don not contain x to rhs
+        auto it_x = lhs_parsed_expression_x.begin();
+        for (auto it1 = lhs_parsed_expression.begin(); it1!=lhs_parsed_expression.end();)
+        {
+            auto it = it1;
+            ++it1;
+            if (it_x!=lhs_parsed_expression_x.end() && it_x->x == it)
+            {
+                ++it_x;
+                continue;
+            }
+            it->front().num_value *= -1;
+            parsed_expression.splice(parsed_expression.end(), lhs_parsed_expression, it);
+        }
+        if (parsed_expression.empty())
+        {
+            t_expr expr;
+            expr.resize(1);
+            expr.front().resize(1);
+            auto &x = expr.front().front();
+            x.div = false;
+            x.log = false;
+            x.x = 0;
+            x.num_value = 0;
+            expr.swap(parsed_expression);
+        }
+        // divide rhs by lhs
+        // TODO: implement proper product expansion
+        parenthesize(parsed_expression, false);
+        parenthesize(lhs_parsed_expression);
+        parsed_expression.front().splice(parsed_expression.front().end(), lhs_parsed_expression.front());
+        parsed_expression.front().back().div ^= true;
+    }
+    static void parenthesize(t_expr &expr, bool force_parenths = true)
+    {
+        if (expr.size()<=1 && !force_parenths)
+            return;
+        t_expr ex;
+        ex.resize(1);
+        ex.front().resize(1);
+        auto &x = ex.front().front();
+        x.div = false;
+        x.log = false;
+        x.x = 0;
+        x.num_value = 1;
+        x.expr_value.swap(expr);
+        ex.swap(expr);
+    }
 
 private:
     const char *p;
-    t_expr parsed_expression;
+    t_expr lhs_parsed_expression, parsed_expression;
+    t_expr_x lhs_parsed_expression_x, parsed_expression_x;
 };
 
 
