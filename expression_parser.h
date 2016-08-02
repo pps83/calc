@@ -147,15 +147,7 @@ protected:
                 return true;
             }
             if (((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')) && check_term(p[1]))
-            {
-                if (parsed_expression_x.empty() || parsed_expression_x.back().x != --parsed_expression.end())
-                {
-                    parsed_expression_x.resize(parsed_expression_x.size()+1);
-                    parsed_expression_x.back().x = --parsed_expression.end();
-                }
-                parsed_expression_x.back().xx.push_back(--parsed_expression.back().end());
                 t.x = *p++;
-            }
             else
             {
                 if (!next('('))
@@ -172,6 +164,15 @@ protected:
                 skip_ws();
                 if (!next(')'))
                     err("expected ')'");
+            }
+            if (t.x || !t.expr_value_x.empty())
+            {
+                if (parsed_expression_x.empty() || parsed_expression_x.back().x != --parsed_expression.end())
+                {
+                    parsed_expression_x.resize(parsed_expression_x.size() + 1);
+                    parsed_expression_x.back().x = --parsed_expression.end();
+                }
+                parsed_expression_x.back().xx.push_back(--parsed_expression.back().end());
             }
         }
         while (num_allowed)
