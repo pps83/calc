@@ -2,6 +2,10 @@
 #include <iostream>
 #include <string>
 #include "expression_parser.h"
+#ifndef _WIN32
+#include <readline/readline.h>
+#include <readline/history.h>
+#endif
 
 static int ok_count = 0, err_count = 0;
 void TEST(const char *expr, double expected_res, const char *err_msg = "", int err_pos = 0)
@@ -84,22 +88,38 @@ int test()
     return err_count;
 }
 
+bool read_line(const char *msg, std::string &ret)
+{
+#ifndef _WIN32
+    rl_bind_key('\t', rl_insert);
+    char *str = readline(msg);
+    if (!str)
+        return false;
+    ret = str;
+    if (*str)
+        add_history(str);
+    free(str);
+#else
+    std::cout << msg;
+    std::cout.flush();
+    if (!std::getline(std::cin, ret))
+        return false;
+#endif
+    return true;
+}
+
 bool read_expr(std::string &expr)
 {
     do
     {
-        std::cout << ">>> ";
-        std::cout.flush();
-        if (!std::getline(std::cin, expr))
+        if (!read_line(">>> ", expr))
             return false;
     }
     while (expr.empty());
     while (expr[expr.size() - 1] == '\\')
     {
         std::string extra;
-        std::cout << "... ";
-        std::cout.flush();
-        if (!std::getline(std::cin, extra))
+        if (!read_line("... ", extra))
             return false;
         expr.resize(expr.size()-1);
         expr.append(extra);
