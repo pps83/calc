@@ -20,12 +20,12 @@ void TEST(const char *expr, double expected_res, const char *err_msg = "", int e
     }
     catch (const expression_error &e)
     {
-        if (0==strcmp(err_msg, e.what()) && err_pos == (int)(e.p - expr))
+        if (0==strcmp(err_msg, e.what()) && err_pos == (int)(e.p ? e.p - expr : -1))
             ok_count++;
         else
         {
             err_count++;
-            fprintf(stderr, "expression error: %s (at pos=%d)\n", e.what(), (int)(e.p - expr));
+            fprintf(stderr, "expression error: %s (at pos=%d)\n", e.what(), (int)(e.p ? e.p - expr : -1));
         }
     }
 }
@@ -72,6 +72,8 @@ int test()
     TEST("1/(1", 0, "expected ')'", 4);
     TEST("1/(((1", 0, "expected ')'", 6);
     TEST("1*(1+3", 0, "expected ')'", 6);
+    TEST("1/0", 0, "division by 0", -1);
+    TEST("log -1", 0, "log of negative or 0", -1);
 
     if (err_count)
         printf("%d tests passed, %d tests failed\n", ok_count, err_count);
@@ -129,8 +131,9 @@ static int calc_eval(const std::string &expr)
     }
     catch (const expression_error &e)
     {
-        std::cout << "expression error: " << e.what() <<
-            " (at pos=" << (int)(e.p - expr.c_str()) << ")";
+        std::cout << "expression error: " << e.what();
+        if (e.p)
+            std::cout <<" (at pos=" << (int)(e.p - expr.c_str()) << ")";
     }
     return 1;
 }

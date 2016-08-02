@@ -31,25 +31,8 @@ struct t_term
     t_expr_x expr_value_x;
 };
 double eval(const t_expr &expr);
-double eval(const t_term &term)
-{
-    double ret = term.num_value;
-    if (!term.expr_value.empty())
-        ret *= eval(term.expr_value);
-    return term.log ? log10(ret) : ret;
-}
-double eval(const t_prod &terms)
-{
-    double ret = 1;
-    for (const auto &term : terms)
-    {
-        if (term.div)
-            ret /= eval(term);
-        else
-            ret *= eval(term);
-    }
-    return ret;
-}
+double eval(const t_term &term);
+double eval(const t_prod &terms);
 double eval(const t_expr &expr)
 {
     double ret = 0;
@@ -306,6 +289,30 @@ private:
 };
 
 
+double eval(const t_term &term)
+{
+    double ret = term.num_value;
+    if (!term.expr_value.empty())
+        ret *= eval(term.expr_value);
+    if (term.log && ret <= 0)
+        throw expression_error("log of negative or 0", nullptr);
+    return term.log ? log10(ret) : ret;
+}
+double eval(const t_prod &terms)
+{
+    double ret = 1;
+    for (const auto &term : terms)
+    {
+        double x = eval(term);
+        if (term.div && !x)
+            throw expression_error("division by 0", nullptr);
+        if (term.div)
+            ret /= eval(term);
+        else
+            ret *= eval(term);
+    }
+    return ret;
+}
 double eval(const char *expr)
 {
     try
@@ -314,7 +321,7 @@ double eval(const char *expr)
     }
     catch (const expression_error &e)
     {
-        fprintf(stderr, "expression error: %s (at pos=%d)\n", e.what(), (int)(e.p-expr));
+        fprintf(stderr, "expression error: %s (at pos=%d)\n", e.what(), (int)((e.p ? e.p - expr : -1)));
     }
     return 0;
 }
