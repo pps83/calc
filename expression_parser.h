@@ -276,6 +276,8 @@ public:
         res = eval(parsed_expression);
         if (!linear)
             return res;
+        if (lhs_res == 0.0)
+            err(res == 0.0 ? "linear equation always true" : "linear equation has no solution", 0);
         return res / lhs_res;
     }
 

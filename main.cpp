@@ -142,6 +142,8 @@ int test()
     TEST("x=y", 0, "multiple variables in linear equation", 2);
     TEST("x=6(1+y)", 0, "multiple variables in linear equation", 6);
     TEST("1(x)=1(y)", 0, "multiple variables in linear equation", 7);
+    TEST("x=x", 0, "linear equation always true", -1);
+    TEST("x=x+1", 0, "linear equation has no solution", -1);
 
     if (err_count)
         printf("%d tests passed, %d tests failed\n", ok_count, err_count);
