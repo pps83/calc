@@ -109,6 +109,8 @@ int test()
     TEST("2x+5-x*10 = log 100/2", 0.5);
     TEST("2 * x + 0.5 = 1", 0.25);
     TEST("1*(2 * x) + 0.5 = 1", 0.25);
+    TEST("2x + 1 = 2(1-x)", 0.25);
+    TEST("2x + 1 = 2(1-0.5*((2x+10)))", -2.25);
 
     TEST("", 0, "expected a value", 0);
     TEST("abc", 0, "expected a value", 0);

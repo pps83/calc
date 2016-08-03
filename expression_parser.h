@@ -35,6 +35,7 @@ double eval(const expr_t &expr)
     return ret;
 }
 double eval(const char *expr);
+void expand_x(expr_t &expr);
 
 
 class expression_error : public std::invalid_argument
@@ -242,6 +243,8 @@ protected:
     }
     void simplify()
     {
+        expand_x(lhs_parsed_expression);
+        expand_x(parsed_expression);
         // move terms containing x to lhs
         for (auto &it : parsed_expression.xprods)
         {
@@ -276,7 +279,6 @@ protected:
             expr.swap(parsed_expression);
         }
         // divide rhs by lhs
-        // TODO: implement proper product expansion
         parenthesize(parsed_expression, false);
         parenthesize(lhs_parsed_expression);
         parsed_expression.front().splice(parsed_expression.front().end(), lhs_parsed_expression.front());
@@ -343,6 +345,46 @@ double eval(const char *expr)
         fprintf(stderr, "expression error: %s (at pos=%d)\n", e.what(), (int)((e.p ? e.p - expr : -1)));
     }
     return 0;
+}
+// (1*2 + 3*x + 5*6 + x*7) => (x*(3+7) + (1*2 + 5*6))
+void compact_x(expr_t &expr)
+{
+    expr_t e;
+    e.resize(2);
+    e.front().resize(1);
+    term_t &x = e.front().back();
+    x.div = x.log = false;
+    x.num_value = expr.xprods.empty() ? 0 : 1.0;
+    for (auto &it : expr.xprods)
+        x.expr_value.splice(x.expr_value.end(), expr, it);
+    expr.xprods.clear();
+    
+    e.back().resize(1);
+    term_t &y = e.back().back();
+    y.div = y.log = false;
+    y.num_value = expr.empty() ? 0 : 1.0;
+    y.expr_value.swap(expr);
+    expr.swap(e);
+    expr.xprods.push_back(expr.begin());
+}
+// (1*2*(3*4 + x*5 + 6*7 + 8*x)*9) => (1*2*x*(5+8)*9 + 1*2*(3*4+6*7)*9)
+void expand_x(expr_t &expr)
+{
+    for (auto &it : expr.xprods)
+    {
+        assert(it->xterms.size()<2);
+        if (it->xterms.size() == 1 && !it->xterms.front()->expr_value.xprods.empty())
+        {
+            auto &p = it->xterms.front();
+            expand_x(p->expr_value);
+            compact_x(p->expr_value);
+            expr_t e;
+            e.splice(e.end(), p->expr_value, p->expr_value.begin());
+            expr.push_back(*it);
+            p->expr_value.splice(p->expr_value.end(), e, e.begin());
+            e.splice(e.end(), p->expr_value, p->expr_value.begin());
+        }
+    }
 }
 
 
