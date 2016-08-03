@@ -14,26 +14,20 @@
 //  TERM          ::= -TERM | TERM FUNC | FUNC | NUM           -*(NUM|FUNC)(FUNC)*
 //  FUNC          ::= log(EXPR) | log TERM | x                 \(EXPR\) | log TERM | x
 
-typedef std::list<struct t_term> t_prod;
-typedef std::list<t_prod> t_expr;
-typedef std::list<struct t_prod_x> t_expr_x;
-struct t_prod_x
-{
-    t_expr::iterator x;
-    std::list<t_prod::iterator> xx;
-};
-struct t_term
+struct term_t;
+struct prod_t : std::list<term_t> { std::list<std::list<term_t>::iterator> xterms; };
+struct expr_t : std::list<prod_t> { std::list<std::list<prod_t>::iterator> xprods; };
+struct term_t
 {
     bool div, log;
     char x;
     double num_value;
-    t_expr expr_value;
-    t_expr_x expr_value_x;
+    expr_t expr_value;
 };
-double eval(const t_expr &expr);
-double eval(const t_term &term);
-double eval(const t_prod &terms);
-double eval(const t_expr &expr)
+double eval(const expr_t &expr);
+double eval(const term_t &term);
+double eval(const prod_t &terms);
+double eval(const expr_t &expr)
 {
     double ret = 0;
     for (const auto &prod : expr)
@@ -54,7 +48,7 @@ public:
 class expression_parser
 {
 public:
-    expression_parser(const char *expr = nullptr, char expect = '\0') : p(nullptr)
+    explicit expression_parser(const char *expr = nullptr, char expect = '\0') : p(nullptr)
     {
         if (expr)
             parse(expr, expect);
@@ -62,17 +56,14 @@ public:
     void parse(const char *expression, char expect = '\0')
     {
         p = expression;
-        parsed_expression.clear();
-        parsed_expression_x.clear();
-        lhs_parsed_expression.clear();
-        lhs_parsed_expression_x.clear();
+        parsed_expression = lhs_parsed_expression = expr_t();
         expr();
         skip_ws();
         if (expect == '\0' && *p == '=')
         {
             ++p;
             lhs_parsed_expression.swap(parsed_expression);
-            lhs_parsed_expression_x.swap(parsed_expression_x);
+            lhs_parsed_expression.xprods.swap(parsed_expression.xprods);
             expr();
             skip_ws();
         }
@@ -80,14 +71,14 @@ public:
             err("unexpected input");
         if (!lhs_parsed_expression.empty())
         {
-            if (lhs_parsed_expression_x.empty() && parsed_expression_x.empty())
+            if (lhs_parsed_expression.xprods.empty() && parsed_expression.xprods.empty())
                 err("linear equation missing 'x'");
             simplify();
         }
-        else if (expect == '\0' && !parsed_expression_x.empty())
+        else if (expect == '\0' && !parsed_expression.xprods.empty())
             err("linear equation missing right hand side");
     }
-    operator const t_expr&() const
+    operator const expr_t&() const
     {
         return parsed_expression;
     }
@@ -119,7 +110,7 @@ protected:
     bool term(bool num_allowed, bool div = false, bool log = false)
     {
         parsed_expression.back().resize(parsed_expression.back().size()+1);
-        t_term &t = parsed_expression.back().back();
+        term_t &t = parsed_expression.back().back();
         t.num_value = 1;
         t.div = div;
         t.log = log;  // TODO: if possible, verify that log argument isn't negative
@@ -164,19 +155,16 @@ protected:
                 expression_parser parser(p, ')');
                 p = parser.p;
                 t.expr_value.swap(parser.parsed_expression);
-                t.expr_value_x.swap(parser.parsed_expression_x);
+                t.expr_value.xprods.swap(parser.parsed_expression.xprods);
                 skip_ws();
                 if (!next(')'))
                     err("expected ')'");
             }
-            if (t.x || !t.expr_value_x.empty())
+            if (t.x || !t.expr_value.xprods.empty())
             {
-                if (parsed_expression_x.empty() || parsed_expression_x.back().x != --parsed_expression.end())
-                {
-                    parsed_expression_x.resize(parsed_expression_x.size() + 1);
-                    parsed_expression_x.back().x = --parsed_expression.end();
-                }
-                parsed_expression_x.back().xx.push_back(--parsed_expression.back().end());
+                if (parsed_expression.xprods.empty() || parsed_expression.xprods.back() != --parsed_expression.end())
+                    parsed_expression.xprods.push_back(--parsed_expression.end());
+                parsed_expression.back().xterms.push_back(--parsed_expression.back().end());
             }
         }
         while (num_allowed)
@@ -232,19 +220,19 @@ protected:
     void simplify()
     {
         // move terms containing x to lhs
-        for (auto &it : parsed_expression_x)
+        for (auto &it : parsed_expression.xprods)
         {
-            it.x->front().num_value *= -1;
-            lhs_parsed_expression.splice(lhs_parsed_expression.end(), parsed_expression, it.x);
+            it->front().num_value *= -1;
+            lhs_parsed_expression.splice(lhs_parsed_expression.end(), parsed_expression, it);
         }
-        lhs_parsed_expression_x.splice(lhs_parsed_expression_x.end(), parsed_expression_x);
+        lhs_parsed_expression.xprods.splice(lhs_parsed_expression.xprods.end(), parsed_expression.xprods);
         // move terms that don not contain x to rhs
-        auto it_x = lhs_parsed_expression_x.begin();
+        auto it_x = lhs_parsed_expression.xprods.begin();
         for (auto it1 = lhs_parsed_expression.begin(); it1!=lhs_parsed_expression.end();)
         {
             auto it = it1;
             ++it1;
-            if (it_x!=lhs_parsed_expression_x.end() && it_x->x == it)
+            if (it_x!=lhs_parsed_expression.xprods.end() && *it_x == it)
             {
                 ++it_x;
                 continue;
@@ -254,7 +242,7 @@ protected:
         }
         if (parsed_expression.empty())
         {
-            t_expr expr;
+            expr_t expr;
             expr.resize(1);
             expr.front().resize(1);
             auto &x = expr.front().front();
@@ -271,11 +259,11 @@ protected:
         parsed_expression.front().splice(parsed_expression.front().end(), lhs_parsed_expression.front());
         parsed_expression.front().back().div ^= true;
     }
-    static void parenthesize(t_expr &expr, bool force_parenths = true)
+    static void parenthesize(expr_t &expr, bool force_parenths = true)
     {
         if (expr.size()<=1 && !force_parenths)
             return;
-        t_expr ex;
+        expr_t ex;
         ex.resize(1);
         ex.front().resize(1);
         auto &x = ex.front().front();
@@ -289,12 +277,11 @@ protected:
 
 private:
     const char *p;
-    t_expr lhs_parsed_expression, parsed_expression;
-    t_expr_x lhs_parsed_expression_x, parsed_expression_x;
+    expr_t lhs_parsed_expression, parsed_expression;
 };
 
 
-double eval(const t_term &term)
+double eval(const term_t &term)
 {
     double ret = term.num_value;
     if (!term.expr_value.empty())
@@ -303,7 +290,7 @@ double eval(const t_term &term)
         throw expression_error("log of negative or 0", nullptr);
     return term.log ? log10(ret) : ret;
 }
-double eval(const t_prod &terms)
+double eval(const prod_t &terms)
 {
     double ret = 1;
     for (const auto &term : terms)
