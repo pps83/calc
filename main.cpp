@@ -17,7 +17,7 @@ void TEST(const char *expr, double expected_res, const char *err_msg = "", int e
         sprintf(str, "%.10f %.10f", res, expected_res);
         double d1, d2;
         sscanf(str, "%lf %lf", &d1, &d2);
-        if (d1 == d2)
+        if (d1 == d2 && err_msg[0]=='\0' && err_pos==0)
             ok_count++;
         else
             err_count++;
