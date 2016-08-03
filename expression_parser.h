@@ -76,14 +76,9 @@ public:
         {
             if (lhs_parsed_expression.xprods.empty() && parsed_expression.xprods.empty())
                 err("linear equation missing 'x'", 0);
-            simplify();
         }
         else if (expect == '\0' && !parsed_expression.xprods.empty())
             err("linear equation missing right hand side");
-    }
-    operator const expr_t&() const
-    {
-        return parsed_expression;
     }
 
 protected:
@@ -266,38 +261,22 @@ protected:
             it->front().num_value *= -1;
             parsed_expression.splice(parsed_expression.end(), lhs_parsed_expression, it);
         }
-        if (parsed_expression.empty())
-        {
-            expr_t expr;
-            expr.resize(1);
-            expr.front().resize(1);
-            auto &x = expr.front().front();
-            x.div = false;
-            x.log = false;
-            x.x = 0;
-            x.num_value = 0;
-            expr.swap(parsed_expression);
-        }
-        // divide rhs by lhs
-        parenthesize(parsed_expression, false);
-        parenthesize(lhs_parsed_expression);
-        parsed_expression.front().splice(parsed_expression.front().end(), lhs_parsed_expression.front());
-        parsed_expression.front().back().div ^= true;
     }
-    static void parenthesize(expr_t &expr, bool force_parenths = true)
+
+public:
+    double solve()
     {
-        if (expr.size()<=1 && !force_parenths)
-            return;
-        expr_t ex;
-        ex.resize(1);
-        ex.front().resize(1);
-        auto &x = ex.front().front();
-        x.div = false;
-        x.log = false;
-        x.x = 0;
-        x.num_value = 1;
-        x.expr_value.swap(expr);
-        ex.swap(expr);
+        double lhs_res = 0, res;
+        bool linear = !lhs_parsed_expression.empty();
+        if (linear)
+        {
+            simplify();
+            lhs_res = eval(lhs_parsed_expression);
+        }
+        res = eval(parsed_expression);
+        if (!linear)
+            return res;
+        return res / lhs_res;
     }
 
 private:
@@ -338,7 +317,7 @@ double eval(const char *expr)
 {
     try
     {
-        return eval(expression_parser(expr));
+        return expression_parser(expr).solve();
     }
     catch (const expression_error &e)
     {

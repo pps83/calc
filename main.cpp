@@ -12,7 +12,7 @@ static void eval(const char *expr, double &res, std::string &err_msg, int &err_p
 {
     try
     {
-        res = eval(expression_parser(expr));
+        res = expression_parser(expr).solve();
         err_msg.clear();
         err_pos = -1;
     }
@@ -58,7 +58,7 @@ void TEST(const char *expr, double expected_res, const char *err_msg = "", int e
     }
     try
     {
-        double res = eval(expression_parser(expr));
+        double res = expression_parser(expr).solve();
         char str[256];
         sprintf(str, "%.10f %.10f", res, expected_res);
         double d1, d2;
@@ -211,7 +211,7 @@ static int calc_eval(const std::string &expr)
         return test();
     else try
     {
-        std::cout << to_string(eval(expression_parser(expr.c_str())));
+        std::cout << to_string(expression_parser(expr.c_str()).solve());
     }
     catch (const expression_error &e)
     {
