@@ -8,8 +8,54 @@
 #endif
 
 static int ok_count = 0, err_count = 0;
+static void eval(const char *expr, double &res, std::string &err_msg, int &err_pos)
+{
+    try
+    {
+        res = eval(expression_parser(expr));
+        err_msg.clear();
+        err_pos = -1;
+    }
+    catch (const expression_error &e)
+    {
+        res = 0;
+        err_msg = e.what();
+        err_pos = (int)(e.p ? e.p - expr : -1);
+    }
+}
+
 void TEST(const char *expr, double expected_res, const char *err_msg = "", int err_pos = 0)
 {
+    double res0;
+    std::string err_msg0;
+    int err_pos0;
+    eval(expr, res0, err_msg0, err_pos0);
+
+    const char *pos = strchr(expr, '=');
+    if (pos)
+    {
+        std::string expr_m(pos+1);
+        expr_m += '=';
+        expr_m.append(expr, pos);
+        double res1;
+        std::string err_msg1;
+        int err_pos1;
+        eval(expr_m.c_str(), res1, err_msg1, err_pos1);
+        if (err_pos1 != -1)
+        {
+            int e_pos = expr_m.size() - (pos - expr);
+            if (err_pos1 >= e_pos)
+                err_pos1 -= e_pos;
+            else
+                err_pos1 += (expr_m.size() - e_pos) + 1;
+        }
+        if (res0!=res1 || err_msg0!=err_msg1 ||
+            (err_msg0!="multiple variables in linear equation" && err_pos0!=err_pos1))
+        {
+            fprintf(stderr, "error: linear equation parsing\n");
+            err_count++;
+        }
+    }
     try
     {
         double res = eval(expression_parser(expr));
@@ -81,7 +127,7 @@ int test()
     TEST("1*(1+3", 0, "expected ')'", 6);
     TEST("1/0", 0, "division by 0", -1);
     TEST("log -1", 0, "log of negative or 0", -1);
-    TEST("1=1", 0, "linear equation missing 'x'", 3);
+    TEST("1=1", 0, "linear equation missing 'x'", -1);
     TEST("x", 0, "linear equation missing right hand side", 1);
     TEST("1/x=1", 0, "division or log in linear equation", 2);
     TEST("log(x)=1", 0, "division or log in linear equation", 4);

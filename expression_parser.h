@@ -74,7 +74,7 @@ public:
         if (!lhs_parsed_expression.empty())
         {
             if (lhs_parsed_expression.xprods.empty() && parsed_expression.xprods.empty())
-                err("linear equation missing 'x'");
+                err("linear equation missing 'x'", 0);
             simplify();
         }
         else if (expect == '\0' && !parsed_expression.xprods.empty())
@@ -232,9 +232,13 @@ protected:
         return !((c >= 'a' && c <= 'z') || (c >= 'A'&& c <= 'Z')
             || (c >= '0' && c <= '1') || c == '_');
     }
+    void err(const char *msg, const char *pos)
+    {
+        throw expression_error(msg, pos);
+    }
     void err(const char *msg)
     {
-        throw expression_error(msg, p);
+        err(msg, p);
     }
     void simplify()
     {
