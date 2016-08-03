@@ -170,6 +170,8 @@ protected:
             {
                 if (parsed_expression.xprods.empty() || parsed_expression.xprods.back() != --parsed_expression.end())
                     parsed_expression.xprods.push_back(--parsed_expression.end());
+                if (!parsed_expression.back().xterms.empty())
+                    err("non-linear equation");
                 parsed_expression.back().xterms.push_back(--parsed_expression.back().end());
             }
         }

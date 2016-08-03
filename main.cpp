@@ -84,6 +84,9 @@ int test()
     TEST("log(x)=1", 0, "division or log in linear equation", 4);
     TEST("10/((1+1(1+x)))=1", 0, "division or log in linear equation", 11);
     TEST("log((1+1(1+x)))=1", 0, "division or log in linear equation", 11);
+    TEST("x*x=1", 0, "non-linear equation", 3);
+    TEST("1x+log 100x*5(1+x)=1", 0, "non-linear equation", 18);
+    TEST("(1+(1+x))*log(100)*((1+(1+x)))=1", 0, "non-linear equation", 30);
 
     if (err_count)
         printf("%d tests passed, %d tests failed\n", ok_count, err_count);
