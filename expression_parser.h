@@ -115,7 +115,7 @@ protected:
         term_t &t = parsed_expression.back().back();
         t.num_value = 1;
         t.div = div;
-        t.log = log;  // TODO: if possible, verify that log argument isn't negative
+        t.log = false;
         t.x = 0;
         skip_ws();
         bool has_value = false;
@@ -136,14 +136,21 @@ protected:
             if (neg)
                 t.num_value *= -1;
         }
+        if(!has_value && next_term("log"))
+        {
+            expression_parser parser(nullptr, '\0', false, x_name);
+            parser.parsed_expression.resize(1);
+            parser.p = p;
+            parser.term(true, false, true);
+            p = parser.p;
+            t.expr_value.swap(parser.parsed_expression);
+            t.expr_value.xprods.swap(parser.parsed_expression.xprods);
+            t.log = true;
+            has_value = true;
+        }
         if(!has_value)
         {
-            if (next_term("log"))
-            {
-                term(true, false, true);
-                return true;
-            }
-            bool x_allowed = this->x_allowed && !t.div && !t.log;
+            bool x_allowed = this->x_allowed && !t.div && !log;
             if (((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')) && check_term(p[1]))
             {
                 if (!x_allowed)
@@ -179,7 +186,7 @@ protected:
                 parsed_expression.back().xterms.push_back(--parsed_expression.back().end());
             }
         }
-        while (num_allowed)
+        while (num_allowed && !log)
         {
             const char *tmp = p;
             if (!term(false))
@@ -297,12 +304,14 @@ private:
 
 double eval(const term_t &term)
 {
-    double ret = term.num_value;
-    if (!term.expr_value.empty())
-        ret *= eval(term.expr_value);
-    if (term.log && ret <= 0)
-        throw expression_error("log of negative or 0", nullptr);
-    return term.log ? log10(ret) : ret;
+    double ret = term.expr_value.empty() ? 1 : eval(term.expr_value);
+    if (term.log)
+    {
+        if (ret <= 0)
+            throw expression_error("log of negative or 0", nullptr);
+        ret = log10(ret);
+    }
+    return term.num_value * ret;
 }
 double eval(const prod_t &terms)
 {
