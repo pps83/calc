@@ -80,6 +80,10 @@ int test()
     TEST("log -1", 0, "log of negative or 0", -1);
     TEST("1=1", 0, "linear equation missing 'x'", 3);
     TEST("x", 0, "linear equation missing right hand side", 1);
+    TEST("1/x=1", 0, "division or log in linear equation", 2);
+    TEST("log(x)=1", 0, "division or log in linear equation", 4);
+    TEST("10/((1+1(1+x)))=1", 0, "division or log in linear equation", 11);
+    TEST("log((1+1(1+x)))=1", 0, "division or log in linear equation", 11);
 
     if (err_count)
         printf("%d tests passed, %d tests failed\n", ok_count, err_count);

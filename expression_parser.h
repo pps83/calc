@@ -48,13 +48,14 @@ public:
 class expression_parser
 {
 public:
-    explicit expression_parser(const char *expr = nullptr, char expect = '\0') : p(nullptr)
+    explicit expression_parser(const char *expr = nullptr, char expect = '\0', bool x_allowed = true)
     {
         if (expr)
-            parse(expr, expect);
+            parse(expr, expect, x_allowed);
     }
-    void parse(const char *expression, char expect = '\0')
+    void parse(const char *expression, char expect = '\0', bool x_allowed = true)
     {
+        this->x_allowed = x_allowed;
         p = expression;
         parsed_expression = lhs_parsed_expression = expr_t();
         expr();
@@ -141,8 +142,13 @@ protected:
                 term(true, false, true);
                 return true;
             }
+            bool x_allowed = this->x_allowed && !t.div && !t.log;
             if (((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')) && check_term(p[1]))
+            {
+                if (!x_allowed)
+                    err("division or log in linear equation");
                 t.x = *p++;
+            }
             else
             {
                 if (!next('('))
@@ -152,7 +158,7 @@ protected:
                     parsed_expression.back().resize(parsed_expression.back().size() - 1);
                     return false;
                 }
-                expression_parser parser(p, ')');
+                expression_parser parser(p, ')', x_allowed);
                 p = parser.p;
                 t.expr_value.swap(parser.parsed_expression);
                 t.expr_value.xprods.swap(parser.parsed_expression.xprods);
@@ -278,6 +284,7 @@ protected:
 private:
     const char *p;
     expr_t lhs_parsed_expression, parsed_expression;
+    bool x_allowed;
 };
 
 
