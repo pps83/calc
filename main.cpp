@@ -127,6 +127,7 @@ int test()
     TEST("1/(1", 0, "expected ')'", 4);
     TEST("1/(((1", 0, "expected ')'", 6);
     TEST("1*(1+3", 0, "expected ')'", 6);
+    TEST("1*(2 * 2*(((x+1))) + 0.5 = 1", 0, "expected ')'", 25);
     TEST("1/0", 0, "division by 0", -1);
     TEST("log -1", 0, "log of negative or 0", -1);
     TEST("1=1", 0, "linear equation missing 'x'", -1);

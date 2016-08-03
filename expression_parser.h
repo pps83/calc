@@ -70,7 +70,7 @@ public:
             expr();
             skip_ws();
         }
-        if (*p && *p != expect)
+        if (*p && *p != expect && !(*p=='=' && expect==')'))
             err("unexpected input");
         if (!lhs_parsed_expression.empty())
         {
