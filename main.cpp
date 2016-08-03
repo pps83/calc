@@ -87,6 +87,9 @@ int test()
     TEST("x*x=1", 0, "non-linear equation", 3);
     TEST("1x+log 100x*5(1+x)=1", 0, "non-linear equation", 18);
     TEST("(1+(1+x))*log(100)*((1+(1+x)))=1", 0, "non-linear equation", 30);
+    TEST("x=y", 0, "multiple variables in linear equation", 2);
+    TEST("x=6(1+y)", 0, "multiple variables in linear equation", 6);
+    TEST("1(x)=1(y)", 0, "multiple variables in linear equation", 7);
 
     if (err_count)
         printf("%d tests passed, %d tests failed\n", ok_count, err_count);

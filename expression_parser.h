@@ -48,14 +48,15 @@ public:
 class expression_parser
 {
 public:
-    explicit expression_parser(const char *expr = nullptr, char expect = '\0', bool x_allowed = true)
+    explicit expression_parser(const char *expr = nullptr, char expect = '\0', bool x_allowed = true, char x_name = 0)
     {
         if (expr)
-            parse(expr, expect, x_allowed);
+            parse(expr, expect, x_allowed, x_name);
     }
-    void parse(const char *expression, char expect = '\0', bool x_allowed = true)
+    void parse(const char *expression, char expect = '\0', bool x_allowed = true, char x_name = 0)
     {
         this->x_allowed = x_allowed;
+        this->x_name = x_name;
         p = expression;
         parsed_expression = lhs_parsed_expression = expr_t();
         expr();
@@ -147,7 +148,9 @@ protected:
             {
                 if (!x_allowed)
                     err("division or log in linear equation");
-                t.x = *p++;
+                if (x_name && x_name != *p)
+                    err("multiple variables in linear equation");
+                t.x = x_name = *p++;
             }
             else
             {
@@ -158,10 +161,11 @@ protected:
                     parsed_expression.back().resize(parsed_expression.back().size() - 1);
                     return false;
                 }
-                expression_parser parser(p, ')', x_allowed);
+                expression_parser parser(p, ')', x_allowed, x_name);
                 p = parser.p;
                 t.expr_value.swap(parser.parsed_expression);
                 t.expr_value.xprods.swap(parser.parsed_expression.xprods);
+                x_name = parser.x_name;
                 skip_ws();
                 if (!next(')'))
                     err("expected ')'");
@@ -287,6 +291,7 @@ private:
     const char *p;
     expr_t lhs_parsed_expression, parsed_expression;
     bool x_allowed;
+    char x_name;
 };
 
 
