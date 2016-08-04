@@ -1,12 +1,12 @@
 CC=g++
 OBJS := $(patsubst %.cpp,%.o,$(wildcard *.cpp))
-main: $(OBJS)
+calc: $(OBJS)
 
 clean:
-	$(RM) $(OBJS) $(subst .o,.d,$(OBJS)) main
+	$(RM) $(OBJS) $(subst .o,.d,$(OBJS)) calc
 
-test: main
-	./main test
+test: calc
+	./calc test
 
 override CPPFLAGS += -MMD -std=c++11 -Wall -O2 -Wl,--stack,0x8000000
 override LDLIBS += -lreadline

@@ -1,4 +1,4 @@
-class expression_parser implements recursive descent parser with the following
+class expression implements recursive descent parser with the following
 grammar rules:
 
   EXPR          ::= PROD+EXPR | PROD-EXPR | PROD

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "expression_parser.h"
+#include "expression.h"
 #ifndef _WIN32
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -13,7 +13,7 @@ static void eval(const char *expr, double &res, std::string &err_msg, int &err_p
 {
     try
     {
-        expression_parser parser(expr);
+        expression parser(expr);
         if (test_serialize)
         {
             std::stringstream ss;
@@ -68,7 +68,7 @@ void TEST(const char *expr, double expected_res, const char *err_msg = "", int e
     }
     try
     {
-        double res = expression_parser(expr).solve();
+        double res = expression(expr).solve();
         char str[256];
         sprintf(str, "%.10f %.10f", res, expected_res);
         double d1, d2;
@@ -223,7 +223,7 @@ static int calc_eval(const std::string &expr)
         return test();
     else try
     {
-        std::cout << to_string(expression_parser(expr.c_str()).solve());
+        std::cout << to_string(expression(expr.c_str()).solve());
     }
     catch (const expression_error &e)
     {
