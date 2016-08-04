@@ -1,0 +1,284 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      <meta name="generator" content="Railroad Diagram Generator 1.44.1240"><style type="text/css" xml:space="preserve">
+    ::-moz-selection
+    {
+      color: #FFFCF0;
+      background: #0F0C00;
+    }
+    ::selection
+    {
+      color: #FFFCF0;
+      background: #0F0C00;
+    }      
+    .ebnf a
+    {
+      text-decoration: none;
+    }
+    .ebnf a:hover
+    {
+      color: #050400;
+      text-decoration: underline;
+    }    
+    .signature
+    {
+      color: #806600;
+      font-size: 11px;
+      text-align: right;
+    }
+    body
+    {
+      font: normal 12px Verdana, sans-serif;
+      color: #0F0C00;
+      background: #FFFCF0;
+    }
+    a:link, a:visited
+    {
+      color: #0F0C00;
+    }
+    a:link.signature, a:visited.signature
+    {
+      color: #806600;
+    }
+    a.button, #tabs li a
+    {
+      padding: 0.25em 0.5em;
+      border: 1px solid #806600;
+      background: #F1E8C6;
+      color: #806600;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    a.button:hover, #tabs li a:hover
+    {
+      color: #050400;
+      background: #FFF6D1;
+      border-color: #050400;       
+    }     
+    #tabs
+    {
+      padding: 3px 10px;
+      margin-left: 0;
+      margin-top: 58px;
+      border-bottom: 1px solid #0F0C00;
+    }  
+    #tabs li
+    {
+      list-style: none;
+      margin-left: 5px;
+      display: inline;
+    }
+    #tabs li a
+    {     
+      border-bottom: 1px solid #0F0C00;
+    }
+    #tabs li a.active
+    {
+      color: #0F0C00;
+      background: #FFFCF0;
+      border-color: #0F0C00;
+      border-bottom: 1px solid #FFFCF0;
+      outline: none;
+    }
+    #divs div
+    {
+      display: none;
+      overflow:auto;
+    }
+    #divs div.active
+    {
+      display: block;
+    }
+    #text
+    {
+      border-color: #806600;
+      background: #FFFEFA;
+      color: #050400;
+    }
+    .small
+    {
+      vertical-align: top;
+      text-align: right;
+      font-size: 9px;
+      font-weight: normal;
+      line-height: 120%;
+    }
+    td.small
+    {
+      padding-top: 0px;
+    }
+    .hidden
+    {
+      visibility: hidden;
+    }
+    td:hover .hidden 
+    {
+      visibility: visible;
+    }
+    div.download
+    {
+      display: none;
+      background: #FFFCF0;
+      position: absolute;
+      right: 34px;
+      top: 94px;
+      padding: 10px;
+      border: 1px dotted #0F0C00;
+    }
+    #divs div.ebnf, div.ebnf
+    {
+      display: block;
+      padding-left: 16px;
+      padding-top: 2px; 
+      padding-bottom: 2px; 
+      background: #FFF6D1;
+    }
+    tr.option-line td:first-child
+    {
+      text-align: right
+    }
+    tr.option-text td
+    {
+      padding-bottom: 10px
+    }
+    table.palette
+    {
+      border-top: 1px solid #050400;
+      border-right: 1px solid #050400;
+      margin-bottom: 4px
+    }
+    td.palette
+    {
+      border-bottom: 1px solid #050400;
+      border-left: 1px solid #050400;
+    }
+    a.palette
+    {
+      padding: 2px 3px 2px 10px;
+      text-decoration: none;
+    }
+    .palette
+    {
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -o-user-select: none;
+      -ms-user-select: none;
+    }
+  </style></head>
+   <body>
+      
+      <p style="font-size: 14px; font-weight:bold"><a name="expression">expression:</a></p>
+      <img border="0" src="expression.png" height="124" width="166" usemap="#expression.map"><map name="expression.map">
+         <area shape="rect" coords="49,89,117,121" href="#product" title="product"></map>
+      
+      <p>
+         
+         <div class="ebnf"><pre><a href="#expression" title="expression" shape="rect">expression</a>
+         ::= <a href="#product" title="product" shape="rect">product</a> ( ( '+' | '-' ) <a href="#product" title="product" shape="rect">product</a> )*</pre></div>
+         
+      </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#func" title="func">func</a></li>
+            
+         </ul>
+         
+      </p><br><p style="font-size: 14px; font-weight:bold"><a name="product">product:</a></p>
+      <img border="0" src="product.png" height="112" width="302" usemap="#product.map"><map name="product.map">
+         <area shape="rect" coords="29,1,77,33" href="#term" title="term">
+         <area shape="rect" coords="205,33,253,65" href="#term" title="term"></map>
+      
+      <p>
+         
+         <div class="ebnf"><pre><a href="#product" title="product" shape="rect">product</a>  ::= <a href="#term" title="term" shape="rect">term</a> ( ( '*' | '/' ) <a href="#term" title="term" shape="rect">term</a> )?</pre></div>
+         
+      </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#expression" title="expression">expression</a></li>
+            
+         </ul>
+         
+      </p><br><p style="font-size: 14px; font-weight:bold"><a name="term">term:</a></p>
+      <img border="0" src="term.png" height="146" width="338" usemap="#term.map"><map name="term.map">
+         <area shape="rect" coords="155,67,203,99" href="#term" title="term">
+         <area shape="rect" coords="243,35,289,67" href="#func" title="func">
+         <area shape="rect" coords="135,111,203,143" href="#number" title="number"></map>
+      
+      <p>
+         
+         <div class="ebnf"><pre><a href="#term" title="term" shape="rect">term</a>     ::= '-'* ( <a href="#term" title="term" shape="rect">term</a>? <a href="#func" title="func" shape="rect">func</a> | <a href="#number" title="number" shape="rect">number</a> )</pre></div>
+         
+      </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#func" title="func">func</a></li>
+            
+            <li><a href="#product" title="product">product</a></li>
+            
+            <li><a href="#term" title="term">term</a></li>
+            
+         </ul>
+         
+      </p><br><p style="font-size: 14px; font-weight:bold"><a name="func">func:</a></p>
+      <img border="0" src="func.png" height="124" width="376" usemap="#func.map"><map name="func.map">
+         <area shape="rect" coords="49,1,87,33" href="#log" title="log">
+         <area shape="rect" coords="173,1,261,33" href="#expression" title="expression">
+         <area shape="rect" coords="127,45,175,77" href="#term" title="term">
+         <area shape="rect" coords="49,89,75,121" href="#x" title="x"></map>
+      
+      <p>
+         
+         <div class="ebnf"><pre><a href="#func" title="func" shape="rect">func</a>     ::= <a href="#log" title="log" shape="rect">log</a> ( '(' <a href="#expression" title="expression" shape="rect">expression</a> ')' | <a href="#term" title="term" shape="rect">term</a> )
+           | <a href="#x" title="x" shape="rect">x</a></pre></div>
+         
+      </p>
+      
+      <p>referenced by:
+         
+         <ul>
+            
+            <li><a href="#term" title="term">term</a></li>
+            
+         </ul>
+         
+      </p><br><hr>
+      
+      <p>
+         
+         <table border="0" class="signature">
+            
+            <tr>
+               
+               <td style="width: 100%">&nbsp;</td>
+               
+               <td valign="top">
+                  
+                  <nobr class="signature">... generated by <a name="Railroad-Diagram-Generator" class="signature" title="http://www.bottlecaps.de/rr/ui" href="http://www.bottlecaps.de/rr/ui" target="_blank">Railroad Diagram Generator</a></nobr>
+                  
+               </td>
+               
+               <td><a name="Railroad-Diagram-Generator" title="http://www.bottlecaps.de/rr/ui" href="http://www.bottlecaps.de/rr/ui" target="_blank">
+                     <img border="0" src="rr-1.44.1240.png" height="16" width="16"></a></td>
+               
+            </tr>
+            
+         </table>
+         
+      </p>
+      
+   </body>
+</html>
