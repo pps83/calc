@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <ostream>
 #include <iomanip>
+#include <memory>
 
 
 //  EXPR          ::= PROD+EXPR | PROD-EXPR | PROD             PROD([+\-]PROD)*
@@ -35,6 +36,11 @@ double eval(const expr_t &expr)
     for (const auto &prod : expr)
         ret += eval(prod);
     return ret;
+}
+void clear(expr_t &e)
+{
+    e.clear();
+    e.xprods.clear();
 }
 double eval(const char *expr);
 void expand_x(expr_t &expr);
@@ -64,7 +70,8 @@ public:
         this->x_allowed = x_allowed;
         this->x_name = x_name;
         p = expression;
-        parsed_expression = lhs_parsed_expression = expr_t();
+        clear(parsed_expression);
+        clear(lhs_parsed_expression);
         expr();
         skip_ws();
         if (expect == '\0' && *p == '=')
@@ -139,13 +146,13 @@ protected:
         }
         if(!has_value && next_term("log"))
         {
-            expression_parser parser(nullptr, '\0', false, x_name);
-            parser.parsed_expression.resize(1);
-            parser.p = p;
-            parser.term(true, false, true);
-            p = parser.p;
-            t.expr_value.swap(parser.parsed_expression);
-            t.expr_value.xprods.swap(parser.parsed_expression.xprods);
+            std::unique_ptr<expression_parser> parser(new expression_parser(nullptr, '\0', false, x_name));
+            parser->parsed_expression.resize(1);
+            parser->p = p;
+            parser->term(true, false, true);
+            p = parser->p;
+            t.expr_value.swap(parser->parsed_expression);
+            t.expr_value.xprods.swap(parser->parsed_expression.xprods);
             t.log = true;
             has_value = true;
         }
@@ -169,11 +176,12 @@ protected:
                     parsed_expression.back().resize(parsed_expression.back().size() - 1);
                     return false;
                 }
-                expression_parser parser(p, ')', x_allowed, x_name);
-                p = parser.p;
-                t.expr_value.swap(parser.parsed_expression);
-                t.expr_value.xprods.swap(parser.parsed_expression.xprods);
-                x_name = parser.x_name;
+                std::unique_ptr<expression_parser> parser(new expression_parser);
+                parser->parse(p, ')', x_allowed, x_name);
+                p = parser->p;
+                t.expr_value.swap(parser->parsed_expression);
+                t.expr_value.xprods.swap(parser->parsed_expression.xprods);
+                x_name = parser->x_name;
                 skip_ws();
                 if (!next(')'))
                     err("expected ')'");
@@ -320,9 +328,9 @@ double eval(const prod_t &terms)
         if (term.div && !x)
             throw expression_error("division by 0", nullptr);
         if (term.div)
-            ret /= eval(term);
+            ret /= x;
         else
-            ret *= eval(term);
+            ret *= x;
     }
     return ret;
 }
