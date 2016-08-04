@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include "expression_parser.h"
 #ifndef _WIN32
@@ -8,11 +9,18 @@
 #endif
 
 static int ok_count = 0, err_count = 0;
-static void eval(const char *expr, double &res, std::string &err_msg, int &err_pos)
+static void eval(const char *expr, double &res, std::string &err_msg, int &err_pos, bool test_serialize = false)
 {
     try
     {
-        res = expression_parser(expr).solve();
+        expression_parser parser(expr);
+        if (test_serialize)
+        {
+            std::stringstream ss;
+            ss << parser;
+            parser.parse(ss.str().c_str());
+        }
+        res = parser.solve();
         err_msg.clear();
         err_pos = -1;
     }
@@ -26,10 +34,15 @@ static void eval(const char *expr, double &res, std::string &err_msg, int &err_p
 
 void TEST(const char *expr, double expected_res, const char *err_msg = "", int err_pos = 0)
 {
-    double res0;
-    std::string err_msg0;
-    int err_pos0;
+    double res0, res1, resX;
+    std::string err_msg0, err_msg1, err_msgX;
+    int err_pos0, err_pos1, err_posX;
     eval(expr, res0, err_msg0, err_pos0);
+    if (err_pos0==-1)
+    {
+        eval(expr, resX, err_msgX, err_posX, true);
+        assert(res0==resX && err_msg0==err_msgX);
+    }
 
     const char *pos = strchr(expr, '=');
     if (pos)
@@ -37,9 +50,6 @@ void TEST(const char *expr, double expected_res, const char *err_msg = "", int e
         std::string expr_m(pos+1);
         expr_m += '=';
         expr_m.append(expr, pos);
-        double res1;
-        std::string err_msg1;
-        int err_pos1;
         eval(expr_m.c_str(), res1, err_msg1, err_pos1);
         if (err_pos1 != -1)
         {

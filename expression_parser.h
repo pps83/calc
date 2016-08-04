@@ -7,6 +7,8 @@
 #include <math.h>
 #include <list>
 #include <stdexcept>
+#include <ostream>
+#include <iomanip>
 
 
 //  EXPR          ::= PROD+EXPR | PROD-EXPR | PROD             PROD([+\-]PROD)*
@@ -36,6 +38,9 @@ double eval(const expr_t &expr)
 }
 double eval(const char *expr);
 void expand_x(expr_t &expr);
+std::ostream& operator<<(std::ostream &os, const expr_t &expr);
+std::ostream& operator<<(std::ostream &os, const term_t &term);
+std::ostream& operator<<(std::ostream &os, const prod_t &prod);
 
 
 class expression_error : public std::invalid_argument
@@ -262,6 +267,12 @@ protected:
             parsed_expression.splice(parsed_expression.end(), lhs_parsed_expression, it);
         }
     }
+    friend std::ostream& operator<<(std::ostream &os, const expression_parser &ep)
+    {
+        if (!ep.lhs_parsed_expression.empty())
+            os << ep.lhs_parsed_expression << '=';
+        return os << ep.parsed_expression;
+    }
 
 public:
     double solve()
@@ -327,6 +338,51 @@ double eval(const char *expr)
     }
     return 0;
 }
+std::ostream& operator<<(std::ostream &os, const term_t &term)
+{
+    if (term.num_value != 1.0)
+        os << std::setprecision(15) << term.num_value;
+    if (term.x)
+        os << term.x;
+    if (term.log)
+    {
+        os << "log";
+        if (term.x)
+            os << ' ';
+    }
+    if (!term.expr_value.empty())
+        os << term.expr_value;
+    if (!term.x && term.expr_value.empty() && term.num_value == 1.0)
+        os << std::setprecision(15) << term.num_value;
+    return os;
+}
+std::ostream& operator<<(std::ostream &os, const prod_t &prod)
+{
+    bool first = true;
+    for (auto &it : prod)
+    {
+        if (!first && !it.div)
+            os << '*';
+        else if (it.div)
+            os << '/';
+        os << it;
+        first = false;
+    }
+    return os;
+}
+std::ostream& operator<<(std::ostream &os, const expr_t &expr)
+{
+    os << '(';
+    bool first = true;
+    for (auto &it : expr)
+    {
+        if (!first && it.front().num_value >= 0)
+            os << '+';
+        os << it;
+        first = false;
+    }
+    return os << ')';
+}
 // (1*2 + 3*x + 5*6 + x*7) => (x*(3+7) + (1*2 + 5*6))
 void compact_x(expr_t &expr)
 {
@@ -339,7 +395,7 @@ void compact_x(expr_t &expr)
     for (auto &it : expr.xprods)
         x.expr_value.splice(x.expr_value.end(), expr, it);
     expr.xprods.clear();
-    
+
     e.back().resize(1);
     term_t &y = e.back().back();
     y.div = y.log = false;
