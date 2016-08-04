@@ -210,7 +210,14 @@ static std::string to_string(double d)
 
 void calc_help()
 {
-    std::cout << "TODO: add help";
+    std::cout <<
+        "Enter simple mathematical expressions or linear equations \n"
+        "with similar grammar as google calculator. For example: \n"
+        "    (3+(4-1))*5\n"
+        "    2 * x + 0.5 = 1\n"
+        "    2x + 1 = 2(1-x)\n"
+        "To run tests type \"test\"\n"
+        "To exit type \"exit\", \"q\", or Ctrl+C" << std::endl;
 }
 
 static int calc_eval(const std::string &expr)
@@ -236,6 +243,7 @@ static int calc_eval(const std::string &expr)
 
 void calc()
 {
+    std::cout << "type \"help\" or \"?\" for quick help" << std::endl;
     for (std::string expr; read_expr(expr) && calc_eval(expr);)
         std::cout << std::endl;
 }
