@@ -25,7 +25,7 @@ or in pseudo-regex:
 ```
 
 Grammar should be very similar to google calculator.
-[See detailed diagram](../blob/master/diagram/index.html).
+[See detailed diagram](//cdn.rawgit.com/pps83/calc/master/diagram/index.html).
 
 ### Licensing 
-For licensing this code see LICENSE
+For licensing this code see [LICENSE](../../blob/master/LICENSE)
